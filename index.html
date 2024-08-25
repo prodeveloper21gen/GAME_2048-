@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>2048 Улучшенная</title>
+    <style>
+        * {
+            transition: 1s;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            padding: 0;
+            margin: 0;
+            touch-action: none;
+            font-size: 1.7vw;
+        }
+        body{
+            overflow: hidden;
+            transition: 0s;
+            justify-content: center;
+            height: 100vh;
+            align-items: center;
+            background: linear-gradient(145deg, #b30000, #3800b9);
+            align-content: center;
+        }
+        .game-container {
+            margin: auto;
+            width: 90vh;
+            height: 90vh;
+            overflow-x: hidden;
+            background: #00000059;
+            border-radius: 1vw;
+            padding: 2vw 3vw;
+            box-shadow: 0 0 20vw rgba(0, 0, 0, 0.2);
+            border: 0.2vh solid #ffffff;
+            scrollbar-width: thin;
+            scrollbar-color: #000000 #cccccc00;
+        }
+        .grid {
+            width: 60vh;
+            height: 60vh;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5vh;
+            margin: auto;
+            margin-bottom: 2vw;
+        }
+        .cell {
+            margin: auto;
+            width: 13vh;
+            height: 13vh;
+            background: #0000004d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.7vw;
+            font-weight: bold;
+            color: #333;
+            border-radius: 0.5vw;
+            transition: background 0.3s, color 0.3s;
+        }
+        .cell[data-value="2"] { box-shadow: 1vh 1vh 2vh black; border: 0.2vh solid white; background: linear-gradient(145deg, rgba(255,255,255, 0.8), #ff0000, #ff0000); color: #ffffff; }
+        .cell[data-value="4"] { box-shadow: 1vh 1vh 2vh black; border: 0.2vh solid white; background: linear-gradient(145deg, rgba(255,255,255, 0.8), #ff5e00, #ff5e00); color: #ffffff; }
+        .cell[data-value="8"] { box-shadow: 1vh 1vh 2vh black; border: 0.2vh solid white; background: linear-gradient(145deg, rgba(255,255,255, 0.8), #fffb00, #fffb00); color: #000000; }
+        .cell[data-value="16"] { box-shadow: 1vh 1vh 2vh black; border: 0.2vh solid white; background: linear-gradient(145deg, rgba(255,255,255, 0.8), #2bff00, #2bff00); color: #000000; }
+        .cell[data-value="32"] { box-shadow: 1vh 1vh 2vh black; border: 0.2vh solid white; background: linear-gradient(145deg, rgba(255,255,255, 0.8), #00ffc8, #00ffaa); color: #000000; }
+        .cell[data-value="64"] { box-shadow: 1vh 1vh 2vh black; border: 0.2vh solid white; background: linear-gradient(145deg, rgba(255,255,255, 0.8), #008cff, #008cff); color: #000000; }
+        .cell[data-value="128"] { box-shadow: 1vh 1vh 2vh black; border: 0.2vh solid white; background: linear-gradient(145deg, rgba(255,255,255, 0.8), #0026ff, #0051ff); color: #f9f6f2; }
+        .cell[data-value="256"] { box-shadow: 1vh 1vh 2vh black; border: 0.2vh solid white; background: linear-gradient(145deg, rgba(255,255,255, 0.8), #0004ff, #0400ff); color: #f9f6f2; }
+        .cell[data-value="512"] { box-shadow: 1vh 1vh 2vh black; border: 0.2vh solid white; background: linear-gradient(145deg, rgba(255,255,255, 0.8), #7700ff, #7700ff); color: #f9f6f2; }
+        .cell[data-value="1024"] { box-shadow: 1vh 1vh 2vh black; border: 0.2vh solid white; background: linear-gradient(145deg, rgba(255,255,255, 0.8), #ff00d4, #ff00d4); color: #f9f6f2; }
+        .cell[data-value="2048"] { box-shadow: 1vh 1vh 2vh black; border: 0.2vh solid white; background: linear-gradient(145deg, rgba(255,255,255, 0.8), #ff0000, #ff5e00, #fffb00, #2bff00, #00ffc8, #008cff, #0026ff, #0004ff, #7700ff, #ff00d4); color: #ffffff; }
+        .button {
+            cursor: pointer;
+            font-size: 1.5vw;
+            margin: 1vh;
+            padding: 1.2vh;
+            border-radius: 1vh;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .score {
+            margin-bottom: 2vh;
+            font-size: 1.7vw;
+            color: white;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 2vw;
+        }
+        .leaderboard {
+            font-size: 1.7vw;
+        }
+        .leaderboard ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .leaderboard li {
+            margin: 1vw 0;
+        }
+
+        @keyframes appear {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes move {
+            from {
+                transform: translate(0, 0);
+            }
+            to {
+                transform: translate(0, 0);
+            }
+        }
+
+        .cell {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .new-tile {
+            animation: appear 0.2s ease-out;
+        }
+
+        .merged-tile {
+            animation: appear 0.2s ease-out, move 0.2s ease-in-out;
+        }
+
+
+        @media (max-width: 512px) {
+            .game-container{
+                padding: 0 1vw;
+                width: 97vw;
+                height: 100vh;
+            }
+            .button{
+                font-size: 3vw;
+                margin: 0.2vw;
+            }
+            .grid{
+                padding: 0;
+                width: 94vw;
+                margin-bottom: 20vh;
+                row-gap: 0vh;
+
+                column-gap: 3vh;
+            }
+            .score{
+                margin-top: 10vw;
+                font-size: 6vw;
+            }
+            .cell{
+                border-radius: 3vw;
+                width: 8vh;
+                height: 8vh;
+                font-size: 5vw;
+                margin-bottom: -10vw;
+                padding-top: -10vh;
+            }
+
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div id="score" class="score">Счет: 0</div>
+        <div id="gridContainer" class="grid"></div>
+        <div class="controls">
+            <button class="button" onclick="initGame()">Новая игра</button>
+            <button class="button" onclick="undoMove()">Отмена хода</button>
+            <button class="button" onclick="toggleHints()">Подсказка</button>
+            <button class="button" onclick="toggleMode()">Смена режима</button>
+        </div>
+    </div>
+    <audio id="bubbleSound" src="Recording(13).mp3" preload="auto"></audio>
+    <script>
+        const bubbleSound = document.getElementById('bubbleSound');
+
+        function playBubbleSound() {
+            bubbleSound.play();
+        }
+        bubbleSound.addEventListener('timeupdate', function() {
+            if (bubbleSound.currentTime >= 0.61) {
+                bubbleSound.pause();
+                bubbleSound.currentTime = 0.48;
+            }
+        });
+
+        const SIZE = 4;
+        const LEADERBOARD_SIZE = 5;
+        let board, prevBoard, score, prevScore, hintsEnabled = false, gameMode = "classic";
+        const scoreElement = document.getElementById('score');
+        const gridContainer = document.getElementById('gridContainer');
+        const leaderboardList = document.getElementById('leaderboardList');
+
+        function initGame() {
+            board = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
+            prevBoard = JSON.parse(JSON.stringify(board));
+            score = 0;
+            prevScore = 0;
+            addRandomTile();
+            addRandomTile();
+            updateView();
+            saveProgress();
+        }
+
+        function addRandomTile() {
+            const emptyCells = [];
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    if (board[r][c] === 0) emptyCells.push({r, c});
+                }
+            }
+            if (emptyCells.length === 0) return;
+            const {r, c} = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            board[r][c] = Math.random() < 0.9 ? 2 : 4;
+        }
+
+        function updateView() {
+        gridContainer.style.gridTemplateColumns = `repeat(${SIZE}, 1fr)`;
+        gridContainer.innerHTML = '';
+
+        for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.textContent = board[r][c] !== 0 ? board[r][c] : '';
+                cell.dataset.value = board[r][c];
+
+                if (board[r][c] !== 0) {
+                    if (board[r][c] === 2 || board[r][c] === 4) {
+                        cell.classList.add('new-tile');
+                    } else {
+                        cell.classList.add('merged-tile');
+                    }
+                }
+
+                gridContainer.appendChild(cell);
+            }
+        }
+
+        scoreElement.textContent = `Счет: ${score}`;
+    }
+
+        function saveProgress() {
+            localStorage.setItem('2048-board', JSON.stringify(board));
+            localStorage.setItem('2048-score', score);
+        }
+
+        function loadProgress() {
+            const savedBoard = localStorage.getItem('2048-board');
+            const savedScore = localStorage.getItem('2048-score');
+            if (savedBoard && savedScore) {
+                board = JSON.parse(savedBoard);
+                score = parseInt(savedScore);
+                updateView();
+            }
+        }
+
+        function undoMove() {
+            board = JSON.parse(JSON.stringify(prevBoard));
+            score = prevScore;
+            updateView();
+        }
+
+        function toggleHints() {
+            hintsEnabled = !hintsEnabled;
+            alert(hintsEnabled ? "Подсказки включены" : "Подсказки выключены");
+        }
+
+        function toggleMode() {
+            gameMode = gameMode === "classic" ? "timed" : "classic";
+            alert(`Режим игры: ${gameMode}`);
+        }
+
+        function updateLeaderboard() {
+            const leaderboard = JSON.parse(localStorage.getItem('2048-leaderboard')) || [];
+            leaderboardList.innerHTML = leaderboard.map(score => `<li>${score}</li>`).join('');
+        }
+
+        function saveLeaderboard() {
+            let leaderboard = JSON.parse(localStorage.getItem('2048-leaderboard')) || [];
+            leaderboard.push(score);
+            leaderboard.sort((a, b) => b - a);
+            if (leaderboard.length > LEADERBOARD_SIZE) leaderboard.pop();
+            localStorage.setItem('2048-leaderboard', JSON.stringify(leaderboard));
+            updateLeaderboard();
+        }
+
+        function moveLeft() {
+            prevBoard = JSON.parse(JSON.stringify(board));
+            prevScore = score;
+
+            for (let r = 0; r < SIZE; r++) {
+                let newRow = board[r].filter(val => val !== 0);
+                for (let c = 0; c < newRow.length - 1; c++) {
+                    if (newRow[c] === newRow[c + 1]) {
+                        newRow[c] *= 2;
+                        score += newRow[c];
+                        newRow.splice(c + 1, 1);
+                        playBubbleSound();
+                    }
+                }
+                while (newRow.length < SIZE) newRow.push(0);
+                board[r] = newRow;
+            }
+            addRandomTile();
+            updateView();
+        }
+
+        function moveRight() {
+            prevBoard = JSON.parse(JSON.stringify(board));
+            prevScore = score;
+
+            for (let r = 0; r < SIZE; r++) {
+                let newRow = board[r].filter(val => val !== 0);
+                for (let c = newRow.length - 1; c > 0; c--) {
+                    if (newRow[c] === newRow[c - 1]) {
+                        newRow[c] *= 2;
+                        score += newRow[c];
+                        newRow.splice(c - 1, 1);
+                        playBubbleSound();
+                    }
+                }
+                while (newRow.length < SIZE) newRow.unshift(0);
+                board[r] = newRow;
+            }
+            addRandomTile();
+            updateView();
+        }
+
+        function moveUp() {
+    prevBoard = JSON.parse(JSON.stringify(board));
+    prevScore = score;
+
+    for (let c = 0; c < SIZE; c++) {
+        let newColumn = [];
+        // Создание новой колонки без пустых ячеек
+        for (let r = 0; r < SIZE; r++) {
+            if (board[r][c] !== 0) newColumn.push(board[r][c]);
+        }
+        // Объединение одинаковых плиток
+        for (let r = 0; r < newColumn.length - 1; r++) {
+            if (newColumn[r] === newColumn[r + 1]) {
+                newColumn[r] *= 2;
+                score += newColumn[r];
+                newColumn.splice(r + 1, 1);
+                playBubbleSound();
+            }
+        }
+        // Заполнение оставшихся ячеек нулями
+        while (newColumn.length < SIZE) newColumn.push(0);
+        // Обновление колонки в доске
+        for (let r = 0; r < SIZE; r++) {
+            board[r][c] = newColumn[r];
+        }
+    }
+    addRandomTile();
+    updateView();
+}
+function moveDown() {
+    prevBoard = JSON.parse(JSON.stringify(board));
+    prevScore = score;
+
+    for (let c = 0; c < SIZE; c++) {
+        let newRow = [];
+        for (let r = 0; r < SIZE; r++) {
+            if (board[r][c] !== 0) newRow.push(board[r][c]);
+        }
+        for (let r = newRow.length - 1; r > 0; r--) {
+            if (newRow[r] === newRow[r - 1]) {
+                newRow[r] *= 2;
+                score += newRow[r];
+                newRow.splice(r - 1, 1);
+                playBubbleSound();
+            }
+        }
+        while (newRow.length < SIZE) newRow.unshift(0);
+        for (let r = 0; r < SIZE; r++) {
+            board[r][c] = newRow[r] || 0;
+        }
+    }
+    addRandomTile();
+    updateView();
+}
+
+function handleKeyPress(e) {
+    switch (e.key) {
+        case 'ArrowLeft':
+            moveLeft();
+            break;
+        case 'ArrowRight':
+            moveRight();
+            break;
+        case 'ArrowUp':
+            moveUp();
+            break;
+        case 'ArrowDown':
+            moveDown();
+            break;
+    }
+    saveProgress();
+}
+
+document.addEventListener('keydown', handleKeyPress);
+
+window.onload = function() {
+    loadProgress();
+    updateLeaderboard();
+    initGame();
+};
+
+function detectSwipe(element, callback) {
+    let touchstartX = 0;
+    let touchstartY = 0;
+    let touchendX = 0;
+    let touchendY = 0;
+
+    element.addEventListener('touchstart', function(event) {
+        touchstartX = event.changedTouches[0].screenX;
+        touchstartY = event.changedTouches[0].screenY;
+    }, false);
+
+    element.addEventListener('touchend', function(event) {
+        touchendX = event.changedTouches[0].screenX;
+        touchendY = event.changedTouches[0].screenY;
+        handleSwipe();
+    }, false);
+
+    function handleSwipe() {
+        const swipedHorizontal = touchendX - touchstartX;
+        const swipedVertical = touchendY - touchstartY;
+
+        if (Math.abs(swipedHorizontal) > Math.abs(swipedVertical)) {
+            if (swipedHorizontal < 0) {
+                callback('left');
+            } else {
+                callback('right');
+            }
+        } else {
+            if (swipedVertical < 0) {
+                callback('up');
+            } else {
+                callback('down');
+            }
+        }
+    }
+}
+
+detectSwipe(document.body, function(direction) {
+    switch (direction) {
+        case 'left':
+            moveLeft();
+            break;
+        case 'right':
+            moveRight();
+            break;
+        case 'up':
+            moveUp();
+            break;
+        case 'down':
+            moveDown();
+            break;
+    }
+    saveProgress();
+});
+
+// scroolbar color black function
+
+window.onscroll = function() {
+  var scroll = document.documentElement.scrollTop || document.body.scrollTop;
+  if (scroll > 0) {
+    document.body.style.backgroundColor = "black";
+  } else {
+    document.body.style.backgroundColor = "white";
+  }
+};
+
+</script>
+</body>
+</html>
